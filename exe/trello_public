@@ -1,0 +1,32 @@
+#!/usr/bin/env ruby
+
+ENV['BUNDLE_GEMFILE'] ||= File.expand_path('../Gemfile', __dir__)
+
+require 'bundler/setup'
+require 'trello'
+
+Trello.configure do |config|
+  config.developer_public_key = ENV.fetch('TRELLO_PUBLIC_KEY')
+  config.member_token = ENV.fetch('TRELLO_MEMBER_TOKEN')
+end
+
+board = Trello::Board.find(ENV.fetch('TRELLO_BOARD_ID'))
+lists = board.lists.reject(&:closed)
+
+task_lists = ["TODO", "DOING", "REVIEW", "DONE"]
+lists.sort_by! { |list| task_lists.index(list.name) }
+
+list_and_cards = lists.map { |list|
+  cards = list.cards.reject(&:closed)
+
+  [list, cards]
+}.to_h
+
+list_and_cards.each do |list, cards|
+  puts "# #{list.name}"
+  cards.each do |card|
+    puts "- #{card.name}"
+  end
+
+  puts ''
+end
